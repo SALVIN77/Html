@@ -1,0 +1,51 @@
+CREATE DATABASE library_db;
+USE library_db;
+CREATE TABLE books(
+accession_no VARCHAR(20) PRIMARY KEY,
+title VARCHAR(150) NOT NULL,
+authors VARCHAR(150),
+edition VARCHAR(30),
+publisher VARCHAR(120)
+);
+<?php
+$db = new mysqli("localhost","root","","library_db");
+if ($db->connect_error) die("DB connection failed");
+if (isset($_POST['save'])) {
+ $st = $db->prepare("INSERT INTO books VALUES (?,?,?,?,?)");
+ $st->bind_param("sssss", $_POST['acc'],$_POST['title'],$_POST['authors'],
+ $_POST['edition'],$_POST['publisher']);
+ $st->execute(); $st->close();
+}
+?>
+<form method="post">
+<input name="acc" placeholder="Accession number" required>
+<input name="title" placeholder="Title" required>
+<input name="authors" placeholder="Authors">
+<input name="edition" placeholder="Edition">
+<input name="publisher" placeholder="Publisher"> 61
+20MCA133 – Web Programming Lab Manual
+<button name="save">Save Book</button>
+</form>
+<form method="get">
+<input name="q" placeholder="Search title">
+<button>Search</button>
+</form>
+<?php
+if (isset($_GET['q']) && $_GET['q'] !== '') {
+ $st=$db->prepare("SELECT * FROM books WHERE title LIKE ?");
+ $q="%".$_GET['q']."%"; $st->bind_param("s",$q); $st->execute();
+ $res=$st->get_result();
+ echo "<h3>Search Results</h3><table border='1'><tr>
+ 
+<th>Accession</th><th>Title</th><th>Authors</th><th>Edition</th><th>Publisher</th></t
+r>";
+ while($r=$res->fetch_assoc()){
+ echo "<tr><td>".htmlspecialchars($r['accession_no'])."</td><td>".
+ htmlspecialchars($r['title'])."</td><td>".htmlspecialchars($r['authors']).
+ "</td><td>".htmlspecialchars($r['edition'])."</td><td>".
+ htmlspecialchars($r['publisher'])."</td></tr>";
+ }
+ echo "</table>"; $st->close();
+}
+$db->close();
+?>
